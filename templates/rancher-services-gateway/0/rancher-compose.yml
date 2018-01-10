@@ -23,18 +23,8 @@ services:
   default-website:
     scale: 1
     start_on_create: true
-  router-tcp-80:
+  router-tcp-80-redirect:
     start_on_create: true
-    lb_config:
-      certs: []
-    health_check:
-      healthy_threshold: 2
-      response_timeout: 2000
-      port: 42
-      unhealthy_threshold: 3
-      initializing_timeout: 60000
-      interval: 2000
-      reinitializing_timeout: 60000
   router-tcp-443:
     start_on_create: true
     lb_config:
@@ -46,6 +36,7 @@ services:
       unhealthy_threshold: 3
       initializing_timeout: 60000
       interval: 2000
+      strategy: recreate
       reinitializing_timeout: 60000
   ranch53:
     scale: 1
