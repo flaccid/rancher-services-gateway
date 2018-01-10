@@ -1,4 +1,4 @@
-name: Rancher Services Gateway
+name: Services Gateway
 description: |
   Public exposure in a non-candid way.
 version: 0.0.1
