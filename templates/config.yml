@@ -2,4 +2,4 @@ name: Rancher Services Gateway
 description: |
   Public exposure in a non-candid way.
 version: 0.0.1
-category: Proxy
+category: Platform
