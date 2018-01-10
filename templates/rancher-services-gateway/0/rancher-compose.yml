@@ -41,7 +41,7 @@ services:
         protocol: https
         service: default-website
         source_port: 443
-        target_port: 8043
+        target_port: 8080
     health_check:
       healthy_threshold: 2
       response_timeout: 2000
@@ -51,6 +51,6 @@ services:
       interval: 2000
       strategy: recreate
       reinitializing_timeout: 60000
-  ranch53:
+  dns-updater:
     scale: 1
     start_on_create: true

@@ -1,9 +1,12 @@
 version: '2'
 services:
   default-website:
-    image: pierrezemb/gostatic
+    image: flaccid/rancher-services-gateway
     stdin_open: true
     tty: true
+    command:
+    - /usr/local/rsg/bin/rsg
+    - --ui
     labels:
       io.rancher.container.pull_image: always
   router-tcp-80-redirect:
@@ -26,7 +29,7 @@ services:
       services_router: 'true'
       io.rancher.container.create_agent: 'true'
       io.rancher.scheduler.global: 'true'
-  ranch53:
+  dns-updater:
     image: flaccid/ranch53
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
