@@ -1,0 +1,50 @@
+version: '2'
+services:
+  default-website:
+    image: pierrezemb/gostatic
+    stdin_open: true
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+  router-tcp-80:
+    image: rancher/lb-service-haproxy:v0.7.9
+    ports:
+    - 80:80/tcp
+    labels:
+      io.rancher.scheduler.affinity:host_label: tier=private
+      io.rancher.container.agent.role: environmentAdmin
+      io.rancher.container.create_agent: 'true'
+      io.rancher.scheduler.global: 'true'
+  router-tcp-443:
+    image: rancher/lb-service-haproxy:v0.7.9
+    ports:
+    - 443:443/tcp
+    labels:
+      io.rancher.scheduler.affinity:host_label: tier=private
+      io.rancher.container.agent.role: environmentAdmin
+      io.rancher.container.create_agent: 'true'
+      io.rancher.scheduler.global: 'true'
+  ranch53:
+    image: flaccid/ranch53
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      POLL_INTERVAL: '30'
+{{- if (.Values.RANCHER_URL)}}
+      RANCHER_URL: ${RANCHER_URL}
+{{- end}}
+{{- if (.Values.RANCHER_ACCESS_KEY)}}
+      RANCHER_ACCESS_KEY: ${RANCHER_ACCESS_KEY}
+{{- end}}
+{{- if (.Values.RANCHER_SECRET_KEY)}}
+      RANCHER_SECRET_KEY: ${RANCHER_SECRET_KEY}
+{{- end}}
+{{- if (.Values.FORWARD_PROXY)}}
+      http_proxy: ${FORWARD_PROXY}
+{{- end}}
+    stdin_open: true
+    tty: true
+    labels:
+      io.rancher.container.agent.role: environment
+      io.rancher.container.create_agent: 'true'
+      io.rancher.container.pull_image: always
