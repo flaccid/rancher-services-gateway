@@ -1,0 +1,4 @@
+.env
+template.html
+cmd/rsg/rsg
+bin/rsg
