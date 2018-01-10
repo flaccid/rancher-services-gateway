@@ -19,6 +19,11 @@ catalog:
     description: "Optional, a forward proxy to use (in format, user:password@hostname:port)."
     type: "string"
     required: false
+  - variable: "DEFAULT_TLS_CERTIFICATE"
+    label: "Default TLS Certificate"
+    description: "The X509 certificate to use for TLS connections."
+    type: certificate
+    required: true
 services:
   default-website:
     scale: 1
@@ -28,7 +33,15 @@ services:
   router-tcp-443:
     start_on_create: true
     lb_config:
-      certs: []
+      default_cert: '${DEFAULT_TLS_CERTIFICATE}'
+      port_rules:
+      - hostname: ''
+        path: ''
+        priority: 1
+        protocol: https
+        service: default-website
+        source_port: 443
+        target_port: 8043
     health_check:
       healthy_threshold: 2
       response_timeout: 2000
