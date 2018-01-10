@@ -11,7 +11,13 @@ services:
       io.rancher.container.pull_image: always
       io.rancher.container.agent.role: environment
       io.rancher.container.create_agent: 'true'
-  router-tcp-80-redirect:
+  service-discovery:
+    image: flaccid/rancher-services-gateway
+    stdin_open: true
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+  router-tcp-80:
     image: jamessharp/docker-nginx-https-redirect
     stdin_open: true
     tty: true

@@ -28,7 +28,10 @@ services:
   default-website:
     scale: 1
     start_on_create: true
-  router-tcp-80-redirect:
+  dns-updater:
+    scale: 1
+    start_on_create: true
+  router-tcp-80:
     start_on_create: true
   router-tcp-443:
     start_on_create: true
@@ -51,6 +54,6 @@ services:
       interval: 2000
       strategy: recreate
       reinitializing_timeout: 60000
-  dns-updater:
+  service-discovery:
     scale: 1
     start_on_create: true
