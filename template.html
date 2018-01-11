@@ -1,0 +1,26 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>{{.Title}}</title>
+  <meta name="description" content="Rancher Services Gateway">
+  <meta name="author" content="Chris Fordham">
+</head>
+
+<body>
+
+  <h1>{{.Title}}</h1>
+
+  <table>
+{{range .Services}}
+    <tr>
+     <td><a href="{{.Url}}">{{.DnsName}}</a></td><td>[{{.State}}]</td>
+   </tr>
+{{end}}
+</table>
+
+</body>
+
+</html>
