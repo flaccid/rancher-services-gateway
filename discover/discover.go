@@ -3,16 +3,24 @@ package discover
 import (
 	"fmt"
 
-  "reflect"
 	log "github.com/Sirupsen/logrus"
 	r "github.com/flaccid/rancher-services-gateway/rancher"
 	rancher "github.com/rancher/go-rancher/v2"
+	"reflect"
 )
+
+type PortRuleClient struct {
+	rancherClient *rancher.RancherClient
+}
+
+type PortRules struct {
+	Rules []*rancher.PortRule
+}
 
 func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey string, lbId string) {
 	rancherClient := r.CreateClient(rancherUrl, rancherAccessKey, rancherSecretKey)
 
-	var servicesRouter *rancher.LoadBalancerService
+	var servicesGateway *rancher.LoadBalancerService
 	var targetLBs []*rancher.LoadBalancerService
 
 	loadBalancerServices := r.ListRancherLoadBalancerServices(rancherClient)
@@ -33,11 +41,11 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 			log.Debug("labels: ", s.LaunchConfig.Labels)
 
 			for k, v := range s.LaunchConfig.Labels {
-				// this lb is a service router
-				if k == "services_router" && v == "true" {
-					servicesRouter = s
+				// this lb is a services gateway
+				if k == "services_gateway" && v == "true" {
+					servicesGateway = s
 					log.Debug(reflect.TypeOf(s))
-					log.Debug(reflect.TypeOf(servicesRouter))
+					log.Debug(reflect.TypeOf(servicesGateway))
 					log.Debug(s)
 					break
 				}
@@ -51,12 +59,13 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 		}
 	}
 
-	// by now we should have the service router resource!
-	//if servicesRouter ? {
-	//	log.Errorf("no services router! found")
+	// by now we should have the services gateway resource
+	// TODO: error out if not
+	// if servicesGateway ? {
+	//	log.Errorf("no services gateway found")
 	//	os.Exit(2)
-	//}
-	log.Info("using services router, ", servicesRouter.Name)
+	// }
+	log.Info("using services gateway, ", servicesGateway.Name)
 
 	log.Info("found ", len(targetLBs), " target service(s)")
 	log.Debug("target LBs", targetLBs)
@@ -73,7 +82,7 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 		// construct the request host
 		for k, v := range t.LaunchConfig.Labels {
 			log.Debug(k)
-		  if k == "platform_identifier" {
+			if k == "platform_identifier" {
 				log.Debug(v)
 				log.Debug(reflect.TypeOf(v))
 				platformId = fmt.Sprint(v)
@@ -89,40 +98,55 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 		log.Info("request host: ", requestHost)
 	}
 
-	log.Info("servicesRouter LbConfig", servicesRouter.LbConfig)
-	log.Info("servicesRouter LinkedServices", servicesRouter.LinkedServices)
+	log.Info("servicesGateway LbConfig", servicesGateway.LbConfig)
+	log.Info("servicesGateway LinkedServices", servicesGateway.LinkedServices)
 
-	// create port rule client
+	// create port rule
 	// this is just a dummy rule atm
 	portRule := rancher.PortRule{
-		Protocol: "https",
-		Hostname: "flaccid-is-learning",
-		Path: "",
-		Priority: 10,
+		Resource:   rancher.Resource{Type: "portRule"},
+		Protocol:   "https",
+		Hostname:   "my.host.com",
+		Path:       "",
+		Priority:   3,
 		SourcePort: 443,
 		TargetPort: 80,
-		ServiceId: "1s1128",
+		ServiceId:  "1s1292",
 	}
 	log.Info("new port rule ", portRule)
 
 	// The strategy allows you to upgrade
- 	strategy := &rancher.ServiceUpgrade{
+	strategy := &rancher.ServiceUpgrade{
 		InServiceStrategy: &rancher.InServiceUpgradeStrategy{
- 		  BatchSize: 1,
- 		  StartFirst: true,
- 		  LaunchConfig: servicesRouter.LaunchConfig,
- 	  },
-  }
+			BatchSize:    1,
+			StartFirst:   true,
+			LaunchConfig: servicesGateway.LaunchConfig,
+		},
+	}
+	log.Debug("upgrade strategy", strategy)
 
-	// Here we can see the new rule added to the current list of rules
-	log.Info("updating the services router")
-	servicesRouter.LbConfig.PortRules = append(servicesRouter.LbConfig.PortRules, portRule)
-	log.Infof("New service Rules: %+v", servicesRouter.LbConfig.PortRules)
-	update, err := rancherClient.LoadBalancerService.ActionUpgrade(servicesRouter, strategy)
+	log.Debug("current port rules: ", servicesGateway.LbConfig.PortRules)
+
+	// show each
+	for p, k := range servicesGateway.LbConfig.PortRules {
+		log.Debug(reflect.TypeOf(k))
+		log.Debug("port rule - ", p, k)
+	}
+	// log.Debug(reflect.TypeOf(portRule))
+	// show what we are adding
+	log.Debug("port rule + ", portRule)
+
+	// append the additional port rule
+	servicesGateway.LbConfig.PortRules = append(servicesGateway.LbConfig.PortRules, portRule)
+	// override instead
+	// servicesGateway.LbConfig.PortRules[1] = portRule
+
+	log.Debug("new port rules: ", servicesGateway.LbConfig.PortRules)
+
+	// carry out the update
+	update, err := rancherClient.LoadBalancerService.ActionUpdate(servicesGateway)
 	if err != nil {
 		panic(err)
-	} else {
-		// Notice here it isn't present in the returned object
-		log.Infof("update complete: +%v", update.LbConfig.PortRules)
 	}
+	log.Debug(update)
 }
