@@ -36,7 +36,7 @@ func render(w http.ResponseWriter, r *http.Request, rancherUrl string, rancherAc
 
 	for _, s := range loadBalancerServices {
 		for k, v := range s.LaunchConfig.Labels {
-			if k == "dns_name" {
+			if k == "dns_alias" {
 				log.Debug(s)
 				service := Service{
 										DnsName: fmt.Sprintf("%v", v),
