@@ -44,6 +44,11 @@ services:
       io.rancher.scheduler.global: 'true'
   dns-updater:
     image: flaccid/ranch53
+    stdin_open: true
+    tty: true
+    command:
+    - --sync-host-pools
+    - --sync-lb-services
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
@@ -60,8 +65,6 @@ services:
 {{- if (.Values.FORWARD_PROXY)}}
       http_proxy: ${FORWARD_PROXY}
 {{- end}}
-    stdin_open: true
-    tty: true
     labels:
       io.rancher.container.agent.role: environment
       io.rancher.container.create_agent: 'true'
