@@ -6,4 +6,4 @@ COPY template.html /usr/local/rsg/template.html
 
 WORKDIR /usr/local/rsg
 
-CMD ["bin/rsg"]
+ENTRYPOINT ["bin/rsg"]
