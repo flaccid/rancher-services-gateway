@@ -27,13 +27,11 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 
 	// get the lb
 	if len(lbId) > 0 {
-		loadBalancerService, err := rancherClient.LoadBalancerService.ById(lbId)
+		lB, err := rancherClient.LoadBalancerService.ById(lbId)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
-
-		log.Debug(loadBalancerService)
-		log.Debug(loadBalancerService.LaunchConfig.Labels)
+		log.Debug("lb ", lB)
 	} else {
 		for _, s := range loadBalancerServices {
 			log.Debug("processing ", s.Uuid)
@@ -63,8 +61,11 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 	if servicesGateway == nil {
 		log.Fatalf("no services gateway found")
 	}
-	log.Info("using services gateway, ", servicesGateway.Name)
-	log.Info("found ", len(targetLBs), " target service(s)")
+	log.WithFields(log.Fields{
+		"name":         servicesGateway.Name,
+		"link":         servicesGateway.Links["self"],
+		"target_count": len(targetLBs),
+	}).Info("services gateway")
 	log.Debug("target LBs", targetLBs)
 
 	// get the gw data first
@@ -106,26 +107,29 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 				dnsTarget = fmt.Sprint(v)
 			}
 		}
+
 		// create port rule
 		portRule := rancher.PortRule{
 			Resource:   rancher.Resource{Type: "portRule"},
 			Protocol:   "https",
 			Hostname:   dnsAlias,
 			Path:       "",
-			Priority:   int64(i),
+			Priority:   int64(i+1),
+			// only https frontend supported currently
 			SourcePort: 443,
-			TargetPort: 80,
+			// target port is the source port of the downstream lb
+			TargetPort: t.LbConfig.PortRules[0].SourcePort,
 			ServiceId:  t.Id,
 		}
 
+		log.Debug("portRule: ", portRule)
+
 		log.WithFields(log.Fields{
-			"gateway.name": servicesGateway.Name,
-			"gateway.url":  servicesGateway.Links["self"],
-			"target_lb":    t.Name,
-			"alias":        dnsAlias,
-			"target":       dnsTarget,
-			"port_rule":    portRule,
-		}).Info("port rule "+string(i), portRule)
+			"target_service":  portRule.ServiceId,
+			"dns_alias":  portRule.Hostname,
+			"dns_target": dnsTarget,
+			"target_port": portRule.TargetPort,
+		}).Info("target ", portRule.Priority)
 
 		portRules = append(portRules, portRule)
 	}
