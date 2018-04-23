@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	gw "github.com/flaccid/rancher-services-gateway/discover"
@@ -54,6 +55,12 @@ func main() {
 			Usage:  "label used to identify the load balancer serviced used for routing",
 			EnvVar: "ROUTER_SERVICE_TAG",
 		},
+		cli.IntFlag{
+			Name:   "poll-interval,t",
+			Usage:  "polling interval in seconds",
+			EnvVar: "POLL_INTERVAL",
+			Value:  0,
+		},
 		cli.BoolFlag{
 			Name:  "dry",
 			Usage: "run in dry mode",
@@ -76,7 +83,15 @@ func start(c *cli.Context) error {
 	if c.Bool("ui") {
 		ui.Run(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"))
 	} else {
-		gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"))
+		if c.Int("poll-interval") > 0 {
+			for {
+				gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"))
+				log.Debug("sleeping ", c.Int("poll-interval"), " second(s)")
+				time.Sleep(time.Duration(c.Int("poll-interval")) * time.Second)
+			}
+		} else {
+			gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"))
+		}
 	}
 
 	return nil
