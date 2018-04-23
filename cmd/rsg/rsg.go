@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/urfave/cli"
 	log "github.com/Sirupsen/logrus"
 	gw "github.com/flaccid/rancher-services-gateway/discover"
 	ui "github.com/flaccid/rancher-services-gateway/ui"
+	"github.com/urfave/cli"
 )
 
 var (
@@ -29,19 +29,19 @@ func main() {
 	app.Before = beforeApp
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "rancher-url",
-			Value: "http://localhost:8080/",
-			Usage: "full url of the rancher server",
+			Name:   "rancher-url",
+			Value:  "http://localhost:8080/",
+			Usage:  "full url of the rancher server",
 			EnvVar: "CATTLE_URL",
 		},
 		cli.StringFlag{
-			Name:  "rancher-access-key",
-			Usage: "rancher access Key",
+			Name:   "rancher-access-key",
+			Usage:  "rancher access Key",
 			EnvVar: "CATTLE_ACCESS_KEY",
 		},
 		cli.StringFlag{
-			Name:  "rancher-secret-key",
-			Usage: "rancher secret Key",
+			Name:   "rancher-secret-key",
+			Usage:  "rancher secret Key",
 			EnvVar: "CATTLE_SECRET_KEY",
 		},
 		cli.StringFlag{
@@ -49,17 +49,21 @@ func main() {
 			Usage: "public rancher load balancer id",
 		},
 		cli.StringFlag{
-			Name:  "router-service-label",
-			Value: "services_router",
-			Usage: "label used to identify the load balancer serviced used for routing",
+			Name:   "router-service-label",
+			Value:  "services_router",
+			Usage:  "label used to identify the load balancer serviced used for routing",
 			EnvVar: "ROUTER_SERVICE_TAG",
 		},
 		cli.BoolFlag{
-			Name: "ui,u",
+			Name:  "dry",
+			Usage: "run in dry mode",
+		},
+		cli.BoolFlag{
+			Name:  "ui,u",
 			Usage: "run the basic ui",
 		},
 		cli.BoolFlag{
-			Name: "debug,d",
+			Name:  "debug,d",
 			Usage: "run in debug mode",
 		},
 	}
@@ -72,8 +76,8 @@ func start(c *cli.Context) error {
 	if c.Bool("ui") {
 		ui.Run(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"))
 	} else {
-		gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "")
+		gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"))
 	}
 
-  return nil
+	return nil
 }
