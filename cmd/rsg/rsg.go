@@ -55,10 +55,6 @@ func main() {
 			Usage:  "label used to identify the load balancer serviced used for routing",
 			EnvVar: "ROUTER_SERVICE_TAG",
 		},
-		cli.StringFlag{
-			Name:  "default-website-service-id",
-			Usage: "default-website target service id",
-		},
 		cli.IntFlag{
 			Name:   "poll-interval,t",
 			Usage:  "polling interval in seconds",
@@ -89,12 +85,12 @@ func start(c *cli.Context) error {
 	} else {
 		if c.Int("poll-interval") > 0 {
 			for {
-				gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"), c.String("default-website-service-id"))
+				gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"))
 				log.Debug("sleeping ", c.Int("poll-interval"), " second(s)")
 				time.Sleep(time.Duration(c.Int("poll-interval")) * time.Second)
 			}
 		} else {
-			gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"), c.String("default-website-service-id"))
+			gw.Discover(c.String("rancher-url"), c.String("rancher-access-key"), c.String("rancher-secret-key"), "", c.Bool("dry"))
 		}
 	}
 

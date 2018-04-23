@@ -18,7 +18,7 @@ import (
 // not using go-rancher for parts, because of fail :(
 // https://forums.rancher.com/t/using-go-rancher-to-update-lb-service-rules/8041
 
-func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey string, lbId string, dry bool, dwId string) {
+func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey string, lbId string, dry bool) {
 	rancherClient := r.CreateClient(rancherUrl, rancherAccessKey, rancherSecretKey)
 	loadBalancerServices := r.ListRancherLoadBalancerServices(rancherClient)
 
@@ -86,6 +86,9 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 
 	var portRules []rancher.PortRule
 
+	// get the default-website service, we assume its the first returned atm
+	defaultWebsite := r.GetRancherServiceByName(rancherClient, "default-website")[0]
+
 	// add default-website portRule (hard-coded for now)
 	portRule := rancher.PortRule{
 		Resource: rancher.Resource{Type: "portRule"},
@@ -97,7 +100,7 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 		SourcePort: 443,
 		// target port is the source port of the downstream lb
 		TargetPort: 8080,
-		ServiceId:  dwId,
+		ServiceId:  defaultWebsite.Id,
 	}
 	portRules = append(portRules, portRule)
 
