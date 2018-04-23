@@ -26,7 +26,7 @@ catalog:
     required: true
 services:
   default-website:
-    scale: 1
+    scale: 2
     start_on_create: true
   dns-updater:
     scale: 1
