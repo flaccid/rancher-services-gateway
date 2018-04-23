@@ -2,28 +2,28 @@ package discover
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"reflect"
+	"strings"
+
+	"github.com/Jeffail/gabs"
 
 	log "github.com/Sirupsen/logrus"
 	r "github.com/flaccid/rancher-services-gateway/rancher"
 	rancher "github.com/rancher/go-rancher/v2"
-	"reflect"
 )
 
-type PortRuleClient struct {
-	rancherClient *rancher.RancherClient
-}
+// NOTE:
+// not using go-rancher for parts, because of fail :(
+// https://forums.rancher.com/t/using-go-rancher-to-update-lb-service-rules/8041
 
-type PortRules struct {
-	Rules []*rancher.PortRule
-}
-
-func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey string, lbId string) {
+func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey string, lbId string, dry bool) {
 	rancherClient := r.CreateClient(rancherUrl, rancherAccessKey, rancherSecretKey)
+	loadBalancerServices := r.ListRancherLoadBalancerServices(rancherClient)
 
 	var servicesGateway *rancher.LoadBalancerService
 	var targetLBs []*rancher.LoadBalancerService
-
-	loadBalancerServices := r.ListRancherLoadBalancerServices(rancherClient)
 
 	// get the lb
 	if len(lbId) > 0 {
@@ -51,7 +51,7 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 				}
 
 				// this lb is a service target
-				if k == "platform_identifier" {
+				if k == "dns_target" {
 					log.Debug("found a target service ", s)
 					targetLBs = append(targetLBs, s)
 				}
@@ -60,93 +60,105 @@ func Discover(rancherUrl string, rancherAccessKey string, rancherSecretKey strin
 	}
 
 	// by now we should have the services gateway resource
-	// TODO: error out if not
-	// if servicesGateway ? {
-	//	log.Errorf("no services gateway found")
-	//	os.Exit(2)
-	// }
+	if servicesGateway == nil {
+		log.Fatalf("no services gateway found")
+	}
 	log.Info("using services gateway, ", servicesGateway.Name)
-
 	log.Info("found ", len(targetLBs), " target service(s)")
 	log.Debug("target LBs", targetLBs)
 
-	var requestHost string
+	// get the gw data first
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", servicesGateway.Links["self"], nil)
+	req.SetBasicAuth(rancherAccessKey, rancherSecretKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	bodyBytes, err2 := ioutil.ReadAll(resp.Body)
+	if err2 != nil {
+		log.Fatal(err2)
+	}
+	gwData, err := gabs.ParseJSON(bodyBytes)
+
+	var portRules []rancher.PortRule
 
 	// for each target
 	for i, t := range targetLBs {
-		var platformId string
-		var platformDnsDomain string
+		var dnsAlias string
+		var dnsTarget string
 
 		log.Debug(i, t)
 
-		// construct the request host
+		// get the dns alias and target
 		for k, v := range t.LaunchConfig.Labels {
 			log.Debug(k)
-			if k == "platform_identifier" {
+			if k == "dns_alias" {
 				log.Debug(v)
 				log.Debug(reflect.TypeOf(v))
-				platformId = fmt.Sprint(v)
+				dnsAlias = fmt.Sprint(v)
 			}
-			if k == "platform_dns_domain" {
+			if k == "dns_target" {
 				log.Debug(v)
 				log.Debug(reflect.TypeOf(v))
-				platformDnsDomain = fmt.Sprint(v)
+				dnsTarget = fmt.Sprint(v)
 			}
 		}
-		requestHost = fmt.Sprintf(platformId + "." + platformDnsDomain)
+		// create port rule
+		portRule := rancher.PortRule{
+			Resource:   rancher.Resource{Type: "portRule"},
+			Protocol:   "https",
+			Hostname:   dnsAlias,
+			Path:       "",
+			Priority:   int64(i),
+			SourcePort: 443,
+			TargetPort: 80,
+			ServiceId:  t.Id,
+		}
 
-		log.Info("request host: ", requestHost)
+		log.WithFields(log.Fields{
+			"gateway.name": servicesGateway.Name,
+			"gateway.url":  servicesGateway.Links["self"],
+			"target_lb":    t.Name,
+			"alias":        dnsAlias,
+			"target":       dnsTarget,
+			"port_rule":    portRule,
+		}).Info("port rule "+string(i), portRule)
+
+		portRules = append(portRules, portRule)
 	}
 
-	log.Info("servicesGateway LbConfig", servicesGateway.LbConfig)
-	log.Info("servicesGateway LinkedServices", servicesGateway.LinkedServices)
+	log.Debug("portRules", portRules)
+	gabs.Consume(gwData)
+	gwData.SetP(portRules, "lbConfig.portRules")
 
-	// create port rule
-	// this is just a dummy rule atm
-	portRule := rancher.PortRule{
-		Resource:   rancher.Resource{Type: "portRule"},
-		Protocol:   "https",
-		Hostname:   "my.host.com",
-		Path:       "",
-		Priority:   3,
-		SourcePort: 443,
-		TargetPort: 80,
-		ServiceId:  "1s1292",
+	// update the lb, with port rule
+	if !dry {
+		log.Info("update load balancer")
+		req, err := http.NewRequest("PUT", servicesGateway.Links["self"], strings.NewReader(gwData.String()))
+		req.SetBasicAuth(rancherAccessKey, rancherSecretKey)
+		req.Header.Set("Content-Type", "application/json")
+		req.ContentLength = int64(len(gwData.String()))
+		response, err := client.Do(req)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			defer response.Body.Close()
+			contents, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Debug("the calculated length is:", len(string(contents)), "for the url:")
+			log.Debug("   ", response.StatusCode)
+			hdr := response.Header
+			for key, value := range hdr {
+				log.Debug("   ", key, ":", value)
+			}
+			log.Debug(string(contents))
+		}
+	} else {
+		log.Info("dry mode, skipping update")
 	}
-	log.Info("new port rule ", portRule)
-
-	// The strategy allows you to upgrade
-	strategy := &rancher.ServiceUpgrade{
-		InServiceStrategy: &rancher.InServiceUpgradeStrategy{
-			BatchSize:    1,
-			StartFirst:   true,
-			LaunchConfig: servicesGateway.LaunchConfig,
-		},
-	}
-	log.Debug("upgrade strategy", strategy)
-
-	log.Debug("current port rules: ", servicesGateway.LbConfig.PortRules)
-
-	// show each
-	for p, k := range servicesGateway.LbConfig.PortRules {
-		log.Debug(reflect.TypeOf(k))
-		log.Debug("port rule - ", p, k)
-	}
-	// log.Debug(reflect.TypeOf(portRule))
-	// show what we are adding
-	log.Debug("port rule + ", portRule)
-
-	// append the additional port rule
-	servicesGateway.LbConfig.PortRules = append(servicesGateway.LbConfig.PortRules, portRule)
-	// override instead
-	// servicesGateway.LbConfig.PortRules[1] = portRule
-
-	log.Debug("new port rules: ", servicesGateway.LbConfig.PortRules)
-
-	// carry out the update
-	update, err := rancherClient.LoadBalancerService.ActionUpdate(servicesGateway)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug(update)
 }
