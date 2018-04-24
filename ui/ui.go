@@ -5,8 +5,8 @@ import (
 	"html/template"
 	"net/http"
 
-	rancher "github.com/flaccid/rancher-services-gateway/rancher"
 	log "github.com/Sirupsen/logrus"
+	rancher "github.com/flaccid/rancher-services-gateway/rancher"
 )
 
 const (
@@ -14,13 +14,13 @@ const (
 )
 
 type Service struct {
-	DnsName string
+	DnsName     string
 	ServiceName string
-	StackId string
-	StackUrl string
-	State string
-	Url string
-	Uuid string
+	StackId     string
+	StackUrl    string
+	State       string
+	Url         string
+	Uuid        string
 }
 
 type PageData struct {
@@ -39,14 +39,14 @@ func render(w http.ResponseWriter, r *http.Request, rancherUrl string, rancherAc
 			if k == "dns_alias" {
 				log.Debug(s)
 				service := Service{
-										DnsName: fmt.Sprintf("%v", v),
-										ServiceName: s.Name,
-										StackId: s.StackId,
-										StackUrl: fmt.Sprintf("%v/env/foo/apps/stacks/bar", rancherUrl),
-										State: s.State,
-										Url: fmt.Sprintf("https://%v/", v),
-										Uuid: s.Uuid,
-									}
+					DnsName:     fmt.Sprintf("%v", v),
+					ServiceName: s.Name,
+					StackId:     s.StackId,
+					StackUrl:    fmt.Sprintf("%v/env/foo/apps/stacks/bar", rancherUrl),
+					State:       s.State,
+					Url:         fmt.Sprintf("https://%v/", v),
+					Uuid:        s.Uuid,
+				}
 				services = append(services, service)
 			}
 		}
@@ -58,7 +58,7 @@ func render(w http.ResponseWriter, r *http.Request, rancherUrl string, rancherAc
 		panic(err)
 	}
 	pageData := PageData{
-		Title: "Rancher Services Gateway",
+		Title:    "Rancher Services Gateway",
 		Services: services,
 	}
 	log.Debug(pageData)
@@ -72,5 +72,5 @@ func Run(rancherUrl string, rancherAccessKey string, rancherSecretKey string) {
 		render(w, r, rancherUrl, rancherAccessKey, rancherSecretKey)
 	})
 
-	http.ListenAndServe(":" + fmt.Sprintf("%v", listenPort), nil)
+	http.ListenAndServe(":"+fmt.Sprintf("%v", listenPort), nil)
 }
