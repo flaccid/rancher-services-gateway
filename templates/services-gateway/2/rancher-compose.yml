@@ -16,7 +16,7 @@ catalog:
     required: true
   - variable: "FORWARD_PROXY"
     label: "Forward Proxy"
-    description: "(optional) - a forward proxy to use (in format, user:password@hostname:port)."
+    description: "Optional, a forward proxy to use (in format, user:password@hostname:port)."
     type: "string"
     required: false
   - variable: "DEFAULT_TLS_CERTIFICATE"
