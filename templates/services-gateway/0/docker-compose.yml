@@ -74,27 +74,3 @@ services:
       io.rancher.container.create_agent: 'true'
       io.rancher.container.pull_image: always
       io.rancher.scheduler.affinity:host_label_soft: tier=private
-{{- if eq .Values.USE_LETSENCRYPT "Yes"}}
-  letsencrypt:
-    image: vxcontrol/rancher-letsencrypt:v1.0.0
-    environment:
-      API_VERSION: Production
-      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY_LETSENCRYPT}
-      AWS_SECRET_KEY: ${AWS_SECRET_KEY_LETSENCRYPT}
-      CERT_NAME: '${CERT_NAME}'
-      DOMAINS: '${DOMAINS}'
-      EMAIL: '${EMAIL}'
-      EULA: 'Yes'
-      PROVIDER: Route53
-      PUBLIC_KEY_TYPE: RSA-2048
-      RENEWAL_PERIOD_DAYS: '20'
-      RENEWAL_TIME: '12'
-      RUN_ONCE: 'false'
-    volumes:
-    - /var/lib/rancher:/var/lib/rancher
-    labels:
-      io.rancher.scheduler.affinity:host_label: tier=public
-      io.rancher.container.agent.role: environment
-      io.rancher.container.create_agent: 'true'
-      tier: public
-{{- end}}
