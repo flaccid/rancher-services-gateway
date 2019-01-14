@@ -79,8 +79,8 @@ services:
     image: vxcontrol/rancher-letsencrypt:v1.0.0
     environment:
       API_VERSION: Production
-      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY_LETSENCRYPT}
-      AWS_SECRET_KEY: ${AWS_SECRET_KEY_LETSENCRYPT}
+      AWS_ACCESS_KEY: '${AWS_ACCESS_KEY_LETSENCRYPT}'
+      AWS_SECRET_KEY: '${AWS_SECRET_KEY_LETSENCRYPT}'
       CERT_NAME: '${CERT_NAME}'
       DOMAINS: '${DOMAINS}'
       EMAIL: '${EMAIL}'

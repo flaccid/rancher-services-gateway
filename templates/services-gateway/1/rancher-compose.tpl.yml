@@ -30,8 +30,8 @@ catalog:
     required: true
     type: enum
     options:
-      - No
-      - Yes
+     - No
+     - Yes
     default: No
   - variable: EMAIL
     label: "Your Email Address (for Let's Encrypt)"
