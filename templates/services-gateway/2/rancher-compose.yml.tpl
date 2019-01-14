@@ -1,7 +1,7 @@
 version: '2'
 catalog:
   name: "servicesgateway"
-  version: "0.0.2"
+  version: "0.0.3"
   description: "Public exposure in a non-candid way."
   questions:
   - variable: "AWS_ACCESS_KEY_ID"
