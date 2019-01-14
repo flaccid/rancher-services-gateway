@@ -74,7 +74,7 @@ services:
       io.rancher.container.create_agent: 'true'
       io.rancher.container.pull_image: always
       io.rancher.scheduler.affinity:host_label_soft: tier=private
-{{- if eq .Values.USE_LETSENCRYPT "Yes"}}
+{{- if eq .Values.USE_LETSENCRYPT "true"}}
   letsencrypt:
     image: vxcontrol/rancher-letsencrypt:v1.0.0
     environment:
