@@ -91,3 +91,6 @@ services:
   service-discovery:
     scale: 1
     start_on_create: true
+  letsencrypt:
+    scale: 1
+    start_on_create: true
