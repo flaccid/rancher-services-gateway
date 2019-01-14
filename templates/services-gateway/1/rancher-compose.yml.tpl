@@ -4,26 +4,26 @@ catalog:
   version: "0.0.2"
   description: "Public exposure in a non-candid way."
   questions:
-    - variable: "AWS_ACCESS_KEY_ID"
-      label: "AWS Access Key ID"
-      description: "AWS Access Key ID to update Route 53."
-      type: "string"
-      required: true
-    - variable: "AWS_SECRET_ACCESS_KEY"
-      label: "AWS Secret Access Key"
-      description: "AWS Secret Access Key to update Route 53."
-      type: "string"
-      required: true
-    - variable: "FORWARD_PROXY"
-      label: "Forward Proxy"
-      description: "Optional, a forward proxy to use (in format, user:password@hostname:port)."
-      type: "string"
-      required: false
-    - variable: "DEFAULT_TLS_CERTIFICATE"
-      label: "Default TLS Certificate"
-      description: "The X509 certificate to use for TLS connections."
-      type: certificate
-      required: true
+  - variable: "AWS_ACCESS_KEY_ID"
+    label: "AWS Access Key ID"
+    description: "AWS Access Key ID to update Route 53."
+    type: "string"
+    required: true
+  - variable: "AWS_SECRET_ACCESS_KEY"
+    label: "AWS Secret Access Key"
+    description: "AWS Secret Access Key to update Route 53."
+    type: "string"
+    required: true
+  - variable: "FORWARD_PROXY"
+    label: "Forward Proxy"
+    description: "(optional) - a forward proxy to use (in format, user:password@hostname:port)."
+    type: "string"
+    required: false
+  - variable: "DEFAULT_TLS_CERTIFICATE"
+    label: "Default TLS Certificate"
+    description: "The X509 certificate to use for TLS connections."
+    type: certificate
+    required: true
 services:
   default-website:
     scale: 2
@@ -55,8 +55,5 @@ services:
       strategy: recreate
       reinitializing_timeout: 60000
   service-discovery:
-    scale: 1
-    start_on_create: true
-  letsencrypt:
     scale: 1
     start_on_create: true
