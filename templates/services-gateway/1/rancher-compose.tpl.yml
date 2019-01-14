@@ -24,11 +24,9 @@ catalog:
     description: "The X509 certificate to use for TLS connections."
     type: certificate
     required: true
-# Let's Encrypt
   - variable: USE_LETSENCRYPT
-    label: Enable Let's Encrypt
-    description: |
-      Use Let's Encrypt (Yes or No)
+    label: "Enable Let's Encrypt"
+    description: "Use Let's Encrypt (Yes or No)"
     required: true
     type: enum
     options:
@@ -36,20 +34,20 @@ catalog:
       - Yes
     default: No
   - variable: EMAIL
-    label: Your Email Address (for Let's Encrypt)
+    label: "Your Email Address (for Let's Encrypt)"
     description: |
       Enter the email address to use for creating the Let's Encrypt account.
     required: true
     type: string
   - variable: CERT_NAME
-    label: Certificate Name (for Let's Encrypt)
+    label: "Certificate Name (for Let's Encrypt)"
     description: |
       Name for storing the certificate in the Rancher API and in volumes.
       Any existing certificate by that name will be updated.
     required: true
     type: string
   - variable: DOMAINS
-    label: Domain Names (for Let's Encrypt)
+    label: "Domain Names (for Let's Encrypt)"
     description: |
       Comma delimited list of the certificate domains starting with the Common Name.
       E.g: `example.com, dev.example.com`.
