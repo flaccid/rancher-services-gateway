@@ -1,6 +1,6 @@
 version: '2'
 catalog:
-  name: "Services Gateway"
+  name: "servicesgateway"
   version: "0.0.2"
   description: "Public exposure in a non-candid way."
   questions:
