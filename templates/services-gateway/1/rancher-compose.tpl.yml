@@ -40,16 +40,12 @@ catalog:
     type: string
   - variable: CERT_NAME
     label: "Certificate Name (for Let's Encrypt)"
-    description: |
-      Name for storing the certificate in the Rancher API and in volumes.
-      Any existing certificate by that name will be updated.
+    description: "Name for storing the certificate in the Rancher API and in volumes. Any existing certificate by that name will be updated."
     required: true
     type: string
   - variable: DOMAINS
     label: "Domain Names (for Let's Encrypt)"
-    description: |
-      Comma delimited list of the certificate domains starting with the Common Name.
-      E.g: `example.com, dev.example.com`.
+    description: "Comma delimited list of the certificate domains starting with the Common Name. E.g: `example.com, dev.example.com`."
     required: true
     type: string
   - variable: "AWS_ACCESS_KEY_ID_LETSENCRYPT"
