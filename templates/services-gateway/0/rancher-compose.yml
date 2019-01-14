@@ -1,76 +1,59 @@
 version: '2'
+catalog:
+  name: "Services Gateway"
+  version: "0.0.1"
+  description: "Public exposure in a non-candid way."
+  questions:
+  - variable: "AWS_ACCESS_KEY_ID"
+    label: "AWS Access Key ID"
+    description: "AWS Access Key ID to update Route 53."
+    type: "string"
+    required: true
+  - variable: "AWS_SECRET_ACCESS_KEY"
+    label: "AWS Secret Access Key"
+    description: "AWS Secret Access Key to update Route 53."
+    type: "string"
+    required: true
+  - variable: "FORWARD_PROXY"
+    label: "Forward Proxy"
+    description: "Optional, a forward proxy to use (in format, user:password@hostname:port)."
+    type: "string"
+    required: false
+  - variable: "DEFAULT_TLS_CERTIFICATE"
+    label: "Default TLS Certificate"
+    description: "The X509 certificate to use for TLS connections."
+    type: certificate
+    required: true
 services:
   default-website:
-    image: flaccid/rancher-services-gateway:latest
-    stdin_open: true
-    tty: true
-    command:
-    - --ui
-    - -d
-    labels:
-      io.rancher.scheduler.affinity:host_label: tier=private
-      io.rancher.container.agent.role: environment
-      label: private
-      io.rancher.container.create_agent: 'true'
-      io.rancher.container.pull_image: always
-  service-discovery:
-    image: flaccid/rancher-services-gateway:latest
-    stdin_open: true
-    tty: true
-    command:
-    - -t
-    - '15'
-    labels:
-      io.rancher.container.agent.role: environment
-      io.rancher.container.create_agent: 'true'
-      io.rancher.container.pull_image: always
-      io.rancher.scheduler.affinity:host_label_soft: tier=private
-  router-tcp-80:
-    image: jamessharp/docker-nginx-https-redirect
-    stdin_open: true
-    tty: true
-    ports:
-    - 80:80/tcp
-    labels:
-      io.rancher.container.pull_image: always
-      io.rancher.scheduler.global: 'true'
-      io.rancher.scheduler.affinity:host_label_soft: tier=private
-  router-tcp-443:
-    image: rancher/lb-service-haproxy:v0.7.15
-    ports:
-    - 443:443/tcp
-    labels:
-      io.rancher.container.agent.role: environmentAdmin,agent
-      io.rancher.container.agent_service.drain_provider: 'true'
-      io.rancher.scheduler.affinity:host_label: tier=private
-      io.rancher.container.create_agent: 'true'
-      services_gateway: 'true'
-      io.rancher.scheduler.global: 'true'
+    scale: 2
+    start_on_create: true
   dns-updater:
-    image: flaccid/ranch53:latest
-    stdin_open: true
-    tty: true
-    command:
-    - --sync-host-pools
-    - --sync-lb-services
-    environment:
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      POLL_INTERVAL: '30'
-{{- if (.Values.RANCHER_URL)}}
-      RANCHER_URL: ${RANCHER_URL}
-{{- end}}
-{{- if (.Values.RANCHER_ACCESS_KEY)}}
-      RANCHER_ACCESS_KEY: ${RANCHER_ACCESS_KEY}
-{{- end}}
-{{- if (.Values.RANCHER_SECRET_KEY)}}
-      RANCHER_SECRET_KEY: ${RANCHER_SECRET_KEY}
-{{- end}}
-{{- if (.Values.FORWARD_PROXY)}}
-      http_proxy: ${FORWARD_PROXY}
-{{- end}}
-    labels:
-      io.rancher.container.agent.role: environment
-      io.rancher.container.create_agent: 'true'
-      io.rancher.container.pull_image: always
-      io.rancher.scheduler.affinity:host_label_soft: tier=private
+    scale: 1
+    start_on_create: true
+  router-tcp-80:
+    start_on_create: true
+  router-tcp-443:
+    start_on_create: true
+    lb_config:
+      default_cert: '${DEFAULT_TLS_CERTIFICATE}'
+      port_rules:
+      - hostname: ''
+        path: ''
+        priority: 1
+        protocol: https
+        service: default-website
+        source_port: 443
+        target_port: 8080
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 42
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  service-discovery:
+    scale: 1
+    start_on_create: true
