@@ -35,8 +35,7 @@ catalog:
     default: No
   - variable: EMAIL
     label: "Your Email Address (for Let's Encrypt)"
-    description: |
-      Enter the email address to use for creating the Let's Encrypt account.
+    description: "Enter the email address to use for creating the Let's Encrypt account."
     required: true
     type: string
   - variable: CERT_NAME
